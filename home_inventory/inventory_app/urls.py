@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import rooms_overview, room_detail, RoomViewSet, LocationViewSet, ItemViewSet, voice_add_item  # ✅ Explicit
+from .views import rooms_overview, room_detail, RoomViewSet, LocationViewSet, ItemViewSet, CategoryViewSet, voice_add_item  # ✅ Explicit
 
 # ✅ Use DefaultRouter for API
 router = DefaultRouter()
@@ -8,6 +8,7 @@ router.register(r'api/rooms', RoomViewSet, basename='room')
 router.register(r'api/locations', LocationViewSet,
                 basename='location')  # ✅ Added Location API
 router.register(r'api/items', ItemViewSet, basename='item')
+router.register(r'api/categories', CategoryViewSet)
 
 urlpatterns = [
     # ✅ Template-based views

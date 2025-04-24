@@ -1,12 +1,44 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    parent = models.ForeignKey('self', null=True, blank=True,
+                               on_delete=models.CASCADE, related_name='subcategories')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        if self.parent:
+            return f"{self.parent.name} > {self.name}"
         return self.name
+
+    def clean(self):
+        # Verhindere Selbstreferenz
+        if self.parent and self.pk and self.parent.pk == self.pk:
+            raise ValidationError("Eine Kategorie kann nicht ihre eigene Parent-Kategorie sein.")
+
+        # Prüfe auf Zyklen
+        if self.parent:
+            seen = {self.pk} if self.pk else set()
+            current = self.parent
+            while current:
+                if current.pk and current.pk in seen:
+                    raise ValidationError("Diese Zuweisung würde einen Zyklus in der Kategorienhierarchie verursachen.")
+                if current == self:  # Direktvergleich für ungespeicherte Objekte
+                    raise ValidationError("Diese Zuweisung würde einen Zyklus verursachen (direkte Selbstreferenz).")
+                seen.add(current.pk)
+                current = current.parent
+
+    class Meta:
+        verbose_name = "Category"
+        verbose_name_plural = "Categories"
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['parent']),
+        ]
 
 
 class Room(models.Model):

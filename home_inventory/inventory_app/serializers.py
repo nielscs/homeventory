@@ -1,18 +1,47 @@
 from rest_framework import serializers
-from .models import Room, Location, Item
+from .models import Room, Location, Item, Category
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    parent = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), allow_null=True)
+    subcategories = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True)
+
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'description', 'parent',
+                  'subcategories', 'created_at', 'updated_at']
+
+    def validate(self, data):
+        # Erstelle eine Instanz des Modells mit den validierten Daten
+        instance = Category(**data)
+        # Rufe die clean-Methode auf
+        instance.clean()
+        return data
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.parent:
+            representation['parent'] = {
+                'id': instance.parent.id, 'name': instance.parent.name}
+        return representation
 
 
 class ItemSerializer(serializers.ModelSerializer):
     location_id = serializers.PrimaryKeyRelatedField(
         source='location.id', read_only=True)  # Add location_id for filtering
-    
-    location_name = serializers.CharField(source="location.name", read_only=True)  # ✅ Location Name
-    room_name = serializers.CharField(source="location.room.name", read_only=True)  # ✅ Room Name
+
+    location_name = serializers.CharField(
+        source="location.name", read_only=True)  # ✅ Location Name
+    room_name = serializers.CharField(
+        source="location.room.name", read_only=True)  # ✅ Room Name
 
     class Meta:
         model = Item
         fields = '__all__'  # Ensures all item details are serialized
-        extra_fields = ["location_name", "room_name"]  # ✅ Ensures additional fields are included
+        # ✅ Ensures additional fields are included
+        extra_fields = ["location_name", "room_name"]
 
 
 class LocationSerializer(serializers.ModelSerializer):
@@ -25,7 +54,8 @@ class LocationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Location
-        fields = ['id', 'name', 'description', 'room_id', 'items']  # ✅ Explicit field list
+        fields = ['id', 'name', 'description',
+                  'room_id', 'items']  # ✅ Explicit field list
 
 
 class RoomSerializer(serializers.ModelSerializer):

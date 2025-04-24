@@ -38,8 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'inventory_app',  # Add your app here
-    'rest_framework', # Rest Framework added
-    'corsheaders', # Crosssite for React
+    'rest_framework',  # Rest Framework added
+    'corsheaders',  # Crosssite for React
+    
 ]
 
 MIDDLEWARE = [

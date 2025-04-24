@@ -4,8 +4,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 import openai
-from .models import Room, Location, Item
-from .serializers import ItemSerializer, RoomSerializer, LocationSerializer
+from .models import Room, Location, Item, Category
+from .serializers import ItemSerializer, RoomSerializer, LocationSerializer, CategorySerializer
 
 # ✅ OpenAI API Key (Replace with your actual key)
 OPENAI_API_KEY = "your_openai_api_key"
@@ -27,6 +27,11 @@ class ItemViewSet(viewsets.ModelViewSet):
     queryset = Item.objects.select_related(
         "location", "location__room")  # ✅ Optimize item queries
     serializer_class = ItemSerializer
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
 
 @api_view(['POST'])
