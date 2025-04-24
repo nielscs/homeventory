@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{% block title %}Home Inventory{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'inventory_app/style.css' %}">
+</head>
+<body>
+  <nav>
+    <a href="{% url 'rooms_overview' %}">Rooms Overview</a>
+    <!-- Add other navigation links here -->
+  </nav>
+  {% block content %}{% endblock %}
+</body>
+</html>

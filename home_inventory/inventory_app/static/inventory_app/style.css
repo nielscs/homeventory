@@ -1,0 +1,11 @@
+/* inventory_app/static/inventory_app/style.css */
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+.room {
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin-bottom: 15px;
+}

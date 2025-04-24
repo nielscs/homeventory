@@ -1,0 +1,23 @@
+{% extends 'inventory_app/base.html' %}
+
+{% block title %}Rooms Overview{% endblock %}
+
+{% block content %}
+<h1>Rooms Overview</h1>
+{% for room in rooms %}
+  <div class="room">
+    <h2><a href="{% url 'room_detail' room.pk %}">{{ room.name }}</a></h2>
+    <p>{{ room.description }}</p>
+    {% if room.locations.all %}
+      <h3>Locations:</h3>
+      <ul>
+        {% for location in room.locations.all %}
+          <li>{{ location.name }} - {{ location.description }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No locations in this room.</p>
+    {% endif %}
+  </div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'inventory_app/base.html' %}
+
+{% block title %}{{ room.name }}{% endblock %}
+
+{% block content %}
+<h1>{{ room.name }}</h1>
+<p>{{ room.description }}</p>
+<h2>Locations:</h2>
+<ul>
+  {% for location in room.locations.all %}
+    <li>{{ location.name }} - {{ location.description }}</li>
+  {% empty %}
+    <li>No locations in this room.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
