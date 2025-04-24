@@ -3,13 +3,16 @@ import os
 import sys
 import time
 
+
 def run_command(command, cwd=None):
     """Führt einen Befehl in einer Shell aus und gibt den Prozess zurück."""
     return subprocess.Popen(command, shell=True, cwd=cwd)
 
+
 def main():
     # Pfade zu Backend- undFrontend-Verzeichnissen
-    backend_dir = os.path.join(os.path.dirname(__file__), "")  # Passe an, falls anders benannt
+    # Passe an, falls anders benannt
+    backend_dir = os.path.join(os.path.dirname(__file__), "")
     frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
 
     # Überprüfe, ob Verzeichnisse existieren
@@ -41,6 +44,7 @@ def main():
         print("\nShutting down servers...")
         django_process.terminate()
         react_process.terminate()
+
 
 if __name__ == "__main__":
     main()
