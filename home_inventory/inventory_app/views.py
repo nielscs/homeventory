@@ -11,26 +11,25 @@ from .serializers import ItemSerializer, RoomSerializer, LocationSerializer, Cat
 OPENAI_API_KEY = "your_openai_api_key"
 
 
-class LocationViewSet(viewsets.ModelViewSet):
-    queryset = Location.objects.prefetch_related(
-        'items')  # ✅ Load related items efficiently
-    serializer_class = LocationSerializer
-
-
 class RoomViewSet(viewsets.ModelViewSet):
-    queryset = Room.objects.prefetch_related(
-        'locations__items')  # ✅ Optimize room queries
+    queryset = Room.objects.all().prefetch_related('locations__sublocations')
     serializer_class = RoomSerializer
 
 
+class LocationViewSet(viewsets.ModelViewSet):
+    queryset = Location.objects.all().select_related(
+        'room', 'parent_location').prefetch_related('sublocations')
+    serializer_class = LocationSerializer
+
+
 class ItemViewSet(viewsets.ModelViewSet):
-    queryset = Item.objects.select_related(
-        "location", "location__room")  # ✅ Optimize item queries
+    queryset = Item.objects.all().select_related('location', 'category')
     serializer_class = ItemSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.all().select_related(
+        'parent').prefetch_related('subcategories')
     serializer_class = CategorySerializer
 
 

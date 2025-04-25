@@ -72,6 +72,12 @@ class Location(models.Model):
     )
     description = models.TextField(blank=True)
 
+    def get_room(self):
+        """Return the room for this location, inheriting from parent if a sublocation."""
+        if self.parent_location:
+            return self.parent_location.get_room()
+        return self.room
+
     def validate_hierarchy(self):
         # Ensure top-level locations have a room
         if self.parent_location is None and self.room is None:

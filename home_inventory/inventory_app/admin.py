@@ -2,9 +2,12 @@ from django.contrib import admin
 from django import forms
 from .models import Category, Room, Location, Item
 
-admin.site.register(Room)
-admin.site.register(Location)
-admin.site.register(Item)
+
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'room', 'parent_location', 'description')
+    list_filter = ('room', 'parent_location')
+    search_fields = ('name', 'description')
+    raw_id_fields = ('room', 'parent_location')  # Improves performance
 
 
 class CategoryAdminForm(forms.ModelForm):
@@ -36,3 +39,8 @@ class CategoryAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('parent').order_by('name')
+
+
+admin.site.register(Room)
+admin.site.register(Location, LocationAdmin)
+admin.site.register(Item)

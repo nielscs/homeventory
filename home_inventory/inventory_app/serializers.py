@@ -45,21 +45,19 @@ class ItemSerializer(serializers.ModelSerializer):
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    # Ensures locations include items
     locations = serializers.SerializerMethodField()
 
     def get_locations(self, obj):
-        # Dynamically serialize locations using LocationSerializer
         locations = obj.locations.all()
         return LocationSerializer(locations, many=True).data
-    
+
     class Meta:
         model = Room
-        fields = '__all__'  # Ensures nested structure
+        fields = ['id', 'name', 'description', 'locations']
 
 
 class LocationSerializer(serializers.ModelSerializer):
-    room = RoomSerializer(read_only=True)  # Ensures room details are included
+    room = serializers.PrimaryKeyRelatedField(read_only=True)
     room_id = serializers.PrimaryKeyRelatedField(
         queryset=Room.objects.all(),
         source='room',
@@ -73,6 +71,11 @@ class LocationSerializer(serializers.ModelSerializer):
     )
     sublocations = serializers.PrimaryKeyRelatedField(
         many=True, read_only=True)
+    
+    def get_room(self, obj):
+        """Return the ID of the room, inherited from parent for sublocations."""
+        room = obj.get_room()
+        return room.id if room else None
 
     def validate(self, data):
         # Ensure sublocations don't have a room
