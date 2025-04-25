@@ -44,24 +44,57 @@ class ItemSerializer(serializers.ModelSerializer):
         extra_fields = ["location_name", "room_name"]
 
 
-class LocationSerializer(serializers.ModelSerializer):
-    items = ItemSerializer(many=True, read_only=True)  # ✅ Keep items read-only
-    room_id = serializers.PrimaryKeyRelatedField(
-        queryset=Room.objects.all(),  # ✅ Ensure valid rooms are used
-        source='room',  # ✅ Maps `room_id` in API to `room` in DB
-        required=False  # ✅ Allow partial updates without forcing `room_id`
-    )
-
-    class Meta:
-        model = Location
-        fields = ['id', 'name', 'description',
-                  'room_id', 'items']  # ✅ Explicit field list
-
-
 class RoomSerializer(serializers.ModelSerializer):
     # Ensures locations include items
-    locations = LocationSerializer(many=True, read_only=True)
+    locations = serializers.SerializerMethodField()
 
+    def get_locations(self, obj):
+        # Dynamically serialize locations using LocationSerializer
+        locations = obj.locations.all()
+        return LocationSerializer(locations, many=True).data
+    
     class Meta:
         model = Room
         fields = '__all__'  # Ensures nested structure
+
+
+class LocationSerializer(serializers.ModelSerializer):
+    room = RoomSerializer(read_only=True)  # Ensures room details are included
+    room_id = serializers.PrimaryKeyRelatedField(
+        queryset=Room.objects.all(),
+        source='room',
+        write_only=True,
+        allow_null=True  # Allow null for sublocations
+    )
+    parent_location = serializers.PrimaryKeyRelatedField(
+        # Only main locations as parents
+        queryset=Location.objects.filter(parent_location__isnull=True),
+        allow_null=True
+    )
+    sublocations = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True)
+
+    def validate(self, data):
+        # Ensure sublocations don't have a room
+        if data.get('parent_location') and data.get('room'):
+            raise serializers.ValidationError(
+                {"room_id": "Sublocations cannot have a room directly."}
+            )
+        # Ensure main locations have a room
+        if not data.get('parent_location') and not data.get('room'):
+            raise serializers.ValidationError(
+                {"room_id": "Main locations must have a room."}
+            )
+        return data
+
+    class Meta:
+        model = Location
+        fields = [
+            'id',
+            'name',
+            'room',
+            'room_id',
+            'parent_location',
+            'sublocations',
+            'description'
+        ]

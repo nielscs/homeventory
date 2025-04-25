@@ -35,4 +35,4 @@ class CategoryAdmin(admin.ModelAdmin):
     autocomplete_fields = ['parent']
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('parent')
+        return super().get_queryset(request).select_related('parent').order_by('name')

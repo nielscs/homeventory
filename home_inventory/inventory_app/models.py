@@ -5,8 +5,13 @@ from django.core.exceptions import ValidationError
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
-    parent = models.ForeignKey('self', null=True, blank=True,
-                               on_delete=models.CASCADE, related_name='subcategories')
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='subcategories'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -18,7 +23,8 @@ class Category(models.Model):
     def clean(self):
         # Verhindere Selbstreferenz
         if self.parent and self.pk and self.parent.pk == self.pk:
-            raise ValidationError("Eine Kategorie kann nicht ihre eigene Parent-Kategorie sein.")
+            raise ValidationError(
+                "Eine Kategorie kann nicht ihre eigene Parent-Kategorie sein.")
 
         # Prüfe auf Zyklen
         if self.parent:
@@ -26,15 +32,19 @@ class Category(models.Model):
             current = self.parent
             while current:
                 if current.pk and current.pk in seen:
-                    raise ValidationError("Diese Zuweisung würde einen Zyklus in der Kategorienhierarchie verursachen.")
+                    raise ValidationError(
+                        "Diese Zuweisung würde einen Zyklus in der Kategorienhierarchie verursachen.")
                 if current == self:  # Direktvergleich für ungespeicherte Objekte
-                    raise ValidationError("Diese Zuweisung würde einen Zyklus verursachen (direkte Selbstreferenz).")
+                    raise ValidationError(
+                        "Diese Zuweisung würde einen Zyklus verursachen (direkte Selbstreferenz).")
                 seen.add(current.pk)
                 current = current.parent
 
     class Meta:
         verbose_name = "Category"
         verbose_name_plural = "Categories"
+        ordering = ['name']  # Alphabetische Sortierung nach name
+        unique_together = ['name', 'parent']  # Ensures unique name per parent
         indexes = [
             models.Index(fields=['name']),
             models.Index(fields=['parent']),
@@ -51,13 +61,42 @@ class Room(models.Model):
 
 
 class Location(models.Model):
-    name = models.CharField(max_length=100)
-    room = models.ForeignKey(
-        Room, related_name='locations', on_delete=models.CASCADE)
-    description = models.TextField(blank=True, null=True)
+    name = models.CharField(max_length=100, default='add description here')
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='locations', null=True, blank=True)
+    parent_location = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='sublocations'
+    )
+    description = models.TextField(blank=True)
+
+    def validate_hierarchy(self):
+        # Ensure top-level locations have a room
+        if self.parent_location is None and self.room is None:
+            raise ValidationError("Top-level locations must have a room.")
+        # Ensure sublocations don't have a room
+        if self.parent_location is not None and self.room is not None:
+            raise ValidationError("Sublocations cannot have a room directly.")
+        # Prevent cycles in location hierarchy
+        if self.parent_location:
+            seen = {self.id}
+            current = self.parent_location
+            while current:
+                if current.id in seen:
+                    raise ValidationError(f"Cycle detected in location hierarchy: {self.name}.")
+                seen.add(current.id)
+                current = current.parent_location
+
+    def save(self, *args, **kwargs):
+        self.validate_hierarchy()
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.name} in {self.room.name}"
+        if self.parent_location:
+            return f"{self.name} (in {self.parent_location.name})"
+        return self.name
 
 
 class Item(models.Model):
