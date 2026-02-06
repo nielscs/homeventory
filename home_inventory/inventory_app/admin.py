@@ -3,12 +3,22 @@ from django import forms
 from .models import Category, Room, Location, Item
 
 
+class RoomAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+    search_fields = ('name',)  # Enable autocomplete search for room
+    ordering = ('name',)
+
+
 class LocationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'get_room_display', 'parent_location', 'description')
+    list_display = ('name', 'get_room_display',
+                    'parent_location', 'description')
     list_filter = ('room', 'parent_location')
-    search_fields = ('name', 'description')
-    raw_id_fields = ('room', 'parent_location')  # Improves performance
-    ordering = ('room',)  # Sort by name for clarity
+    search_fields = ('name', 'description', 'room__name')
+    # Prepopulate name from description
+    prepopulated_fields = {'name': ('description',)}
+    # Autocomplete for room and parent_location
+    autocomplete_fields = ['room', 'parent_location']
+    ordering = ('name',)  # Sort by name for clarity
 
     def get_room_display(self, obj):
         """Display the inherited room in the admin list view."""
@@ -22,6 +32,12 @@ class LocationAdmin(admin.ModelAdmin):
         if obj and obj.parent_location:
             form.base_fields['room'].disabled = True
         return form
+
+    def get_readonly_fields(self, request, obj=None):
+        """Make room field read-only when editing sublocations."""
+        if obj and obj.parent_location:
+            return ('room',)
+        return ()
 
 
 class CategoryAdminForm(forms.ModelForm):
@@ -55,6 +71,6 @@ class CategoryAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related('parent').order_by('name')
 
 
-admin.site.register(Room)
+admin.site.register(Room, RoomAdmin)
 admin.site.register(Location, LocationAdmin)
 admin.site.register(Item)
