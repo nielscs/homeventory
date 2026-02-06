@@ -4,10 +4,24 @@ from .models import Category, Room, Location, Item
 
 
 class LocationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'room', 'parent_location', 'description')
+    list_display = ('name', 'get_room_display', 'parent_location', 'description')
     list_filter = ('room', 'parent_location')
     search_fields = ('name', 'description')
     raw_id_fields = ('room', 'parent_location')  # Improves performance
+    ordering = ('room',)  # Sort by name for clarity
+
+    def get_room_display(self, obj):
+        """Display the inherited room in the admin list view."""
+        room = obj.get_room()
+        return room.name if room else 'None'
+    get_room_display.short_description = 'Room'
+
+    def get_form(self, request, obj=None, **kwargs):
+        """Make the room field read-only for sublocations."""
+        form = super().get_form(request, obj, **kwargs)
+        if obj and obj.parent_location:
+            form.base_fields['room'].disabled = True
+        return form
 
 
 class CategoryAdminForm(forms.ModelForm):

@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework import status
 import openai
@@ -20,6 +20,22 @@ class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all().select_related(
         'room', 'parent_location').prefetch_related('sublocations')
     serializer_class = LocationSerializer
+
+    @action(detail=False, methods=['get'])
+    def tree(self, request):
+        def build_tree(location):
+            room = location.get_room()
+            return {
+                'id': location.id,
+                'name': location.name,
+                'room': {'id': room.id, 'name': room.name} if room else None,
+                'description': location.description,
+                'sublocations': [build_tree(sub) for sub in location.sublocations.all()]
+            }
+
+        top_level = Location.objects.filter(parent_location__isnull=True).select_related('room')
+        tree = [build_tree(loc) for loc in top_level]
+        return Response(tree)
 
 
 class ItemViewSet(viewsets.ModelViewSet):
